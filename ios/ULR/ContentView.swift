@@ -1,0 +1,2 @@
+import SwiftUI
+struct ContentView: View { var body: some View { VStack(alignment: .leading, spacing: 16) { Text("ULR Safari").font(.largeTitle).bold(); Text("Enable ULR in Settings → Apps → Safari → Extensions. Open a supported provider and select ULR in Safari."); Text("Complete CAPTCHA manually. ULR detects links shown in the page; it does not bypass verification.").foregroundStyle(.secondary) }.padding() } }

@@ -1,0 +1,1 @@
+const api=globalThis.browser??globalThis.chrome;api.runtime.onMessage.addListener((msg,sender)=>{if(msg?.type!=="ULR_LINKS"||!sender.tab?.id)return;api.storage.local.set({["tab_"+sender.tab.id]:{page:sender.tab.url,links:msg.links}})});
