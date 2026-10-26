@@ -1,0 +1,95 @@
+name: Release ULR candidate
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release.yml'
+permissions:
+  contents: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m unittest discover -s tests -v
+  package:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+          - os: macos-latest
+            label: macOS
+          - os: ubuntu-latest
+            label: Linux
+    runs-on: ${{ matrix.os }}
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Linux runtime dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk libgtk-3-0 libnss3 libasound2t64 libatk-bridge2.0-0 libx11-xcb1
+      - run: python -m pip install -r requirements-build.txt
+      - run: python -m playwright install chromium
+      - run: python -m PyInstaller --noconfirm --clean --onedir --windowed --name ULR --collect-all playwright launcher.py
+      - name: Bundle Chromium Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Copy-Item -Recurse -Force "$env:PLAYWRIGHT_BROWSERS_PATH" "dist/ULR/pw-browsers"
+      - name: Bundle Chromium Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: cp -a "$PLAYWRIGHT_BROWSERS_PATH" dist/ULR/pw-browsers
+      - name: Smoke test Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./dist/ULR/ULR.exe --self-test
+      - name: Smoke test Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./dist/ULR/ULR --self-test
+      - name: Archive Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/ULR -DestinationPath ULR-Windows.zip
+      - name: Archive Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: tar -czf "ULR-${{ matrix.label }}.tar.gz" -C dist ULR
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.label }}
+          path: ULR-*.*
+          if-no-files-found: error
+          compression-level: 0
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          merge-multiple: true
+          path: release-assets
+      - name: Publish release candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create v1.0.0-rc1 release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "ULR v1.0.0-rc1" \
+            --prerelease \
+            --notes "Release candidate: Windows, macOS and Linux standalone builds with bundled Chromium. CI unit and packaging smoke tests passed. Live provider extraction is not verified. Binaries are unsigned."
