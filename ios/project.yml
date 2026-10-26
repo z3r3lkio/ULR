@@ -1,0 +1,47 @@
+name: ULR
+options:
+  bundleIdPrefix: io.github.z3r3lkio
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    CODE_SIGN_STYLE: Automatic
+targets:
+  ULR:
+    type: application
+    platform: iOS
+    sources:
+      - path: ULR
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.z3r3lkio.ulr
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: ULR/Info.plist
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
+    dependencies:
+      - target: ULRSafariExtension
+        embed: true
+  ULRSafariExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ExtensionNative
+      - path: ULRSafariExtension/manifest.json
+        buildPhase: resources
+      - path: ULRSafariExtension/background.js
+        buildPhase: resources
+      - path: ULRSafariExtension/content.js
+        buildPhase: resources
+      - path: ULRSafariExtension/popup.html
+        buildPhase: resources
+      - path: ULRSafariExtension/popup.js
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.z3r3lkio.ulr.extension
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: ExtensionNative/Info.plist
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
