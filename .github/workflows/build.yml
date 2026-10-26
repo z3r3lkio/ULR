@@ -1,9 +1,11 @@
-name: Build ULR binaries
+name: Build ULR standalone
 on:
   workflow_dispatch:
   push:
-    branches: [main, feature/universal-resolver-ci]
+    branches: [main, feature/bundled-browser-release]
   pull_request:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -26,22 +28,41 @@ jobs:
           - os: ubuntu-latest
             label: Linux
     runs-on: ${{ matrix.os }}
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
-      - name: Linux dependencies
+      - name: Install Linux GUI libraries
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y python3-tk
+        run: sudo apt-get update && sudo apt-get install -y python3-tk libgtk-3-0 libnss3 libasound2t64 libatk-bridge2.0-0 libx11-xcb1
       - run: python -m pip install -r requirements-build.txt
-      - name: Install browser
+      - name: Download Chromium
         run: python -m playwright install chromium
-      - name: Build
+      - name: Build desktop application
         run: python -m PyInstaller --noconfirm --clean --onedir --windowed --name ULR --collect-all playwright launcher.py
-      - name: Upload binary
+      - name: Bundle Chromium (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Copy-Item -Recurse -Force "$env:PLAYWRIGHT_BROWSERS_PATH" "dist/ULR/pw-browsers"
+      - name: Bundle Chromium (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: cp -a "$PLAYWRIGHT_BROWSERS_PATH" dist/ULR/pw-browsers
+      - name: Smoke test packaged executable (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./dist/ULR/ULR.exe --self-test
+      - name: Smoke test packaged executable (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./dist/ULR/ULR --self-test
+      - name: Upload standalone application
         uses: actions/upload-artifact@v4
         with:
-          name: ULR-${{ matrix.label }}
-          path: dist/
+          name: ULR-${{ matrix.label }}-Standalone
+          path: dist/ULR/
           if-no-files-found: error
+          compression-level: 1
