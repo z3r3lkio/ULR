@@ -1,0 +1,37 @@
+name: iPadOS Safari Extension CI
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-ios-simulator:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate --spec project.yml
+      - name: Build for iOS Simulator without signing
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/ULR.xcodeproj -scheme ULR -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/ULRDerived" CODE_SIGNING_ALLOWED=NO build
+      - name: Check embedded Safari extension
+        run: |
+          test -d "$RUNNER_TEMP/ULRDerived/Build/Products/Debug-iphonesimulator/ULR.app/PlugIns/ULRSafariExtension.appex"
+          test -f "$RUNNER_TEMP/ULRDerived/Build/Products/Debug-iphonesimulator/ULR.app/PlugIns/ULRSafariExtension.appex/manifest.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ULR-iOS-Simulator-Unsigned
+          path: ${{ runner.temp }}/ULRDerived/Build/Products/Debug-iphonesimulator/ULR.app
+          if-no-files-found: error

@@ -1,9 +1,25 @@
-# ULR Safari Web Extension — prototype
+# ULR Safari Web Extension — iOS / iPadOS
 
-The source for a Safari Web Extension for iPhone and iPad lives in this folder. It observes page links and detects VikingFile's #download-link after the user completes any verification. The popup offers Copy and Open. No cookies are extracted and no CAPTCHA is bypassed.
+This folder contains a SwiftUI container app, native Safari extension handler, Safari Web Extension JavaScript resources, and an **XcodeGen project specification** (`project.yml`).
 
-## Build setup
+## Generate and build on macOS
 
-On macOS, use Xcode's **Safari Web Extension App** template for iOS, name the app ULR, then replace the generated SwiftUI app sources with those under ULR/ and the extension's web resources with the contents of ULRSafariExtension/. Configure unique app/extension bundle IDs and your Apple signing team. Enable the extension in iPad Settings → Apps → Safari → Extensions and grant permission to the supported site.
+Install Xcode and XcodeGen, then:
 
-**Not yet an Xcode project or IPA.** The repository includes source files only, not a ready-to-build Xcode project. Actual iPadOS execution, Safari MV3 support and clipboard behavior still require device validation. A generated template may require adjusting the manifest/background script for the target Safari version. The extension retains detected URLs in extension-local storage and does not upload them.
+```bash
+cd ios
+xcodegen generate --spec project.yml
+xcodebuild -project ULR.xcodeproj -scheme ULR -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+```
+
+GitHub Actions performs an unsigned iOS Simulator build and checks for the embedded Safari extension. **A simulator .app is not an IPA and cannot be installed on a physical iPad.**
+
+## Install on an iPad
+
+Open the generated project in Xcode, choose your Apple Development team for **both** targets, replace bundle identifiers if needed, connect the iPad and build/run. Enable ULR in iPadOS Settings → Apps → Safari → Extensions and grant access to the supported website.
+
+The app observes VikingFile's `#download-link` after **manual** verification and displays candidate links in a popup. Other sites use generic anchor detection. It does not bypass CAPTCHA or read private Safari cookies. A detected link can be session-bound.
+
+## Limitations
+
+The code has not been tested on a physical iPad. Safari API behavior, extension permissions and popup clipboard operations must be validated on-device. This is a development build, not a signed distribution IPA. GitHub Actions cannot generate an installable device IPA without Apple signing credentials and appropriate provisioning.
