@@ -13,7 +13,7 @@ python -m unittest discover -s tests -v
 
 ## GitHub Actions
 
-`.github/workflows/build.yml` tests with Python 3.14 and builds unsigned PyInstaller artifacts on Windows, macOS and Linux. **Chromium is not bundled** in the generated packages; install a compatible Playwright Chromium on the target machine. This is not yet a standalone zero-dependency installer. Linux needs a GUI and Tkinter.
+`.github/workflows/build.yml` tests with Python 3.14 and builds unsigned PyInstaller artifacts on Windows, macOS and Linux. Chromium is bundled inside each `ULR-<OS>-Standalone` artifact, and the launcher selects the bundled browser. Extract the full archive before running the executable. Builds are unsigned; OS security prompts may apply. Linux needs a GUI and Tkinter.
 
 ## Provider status
 
