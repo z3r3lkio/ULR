@@ -61,7 +61,7 @@ def open_safari(url):
 def safari_handoff(url, interactive=True):
     print("\n[Safari] Open this URL and complete any required verification:")
     print(url)
-    opened = open_safari(url)
+    opened = open_safari(url) if interactive else False
     if not opened:
         print("[Safari] Could not open automatically. Copy the URL into Safari.")
     print("[Safari] When a download link is visible, copy its URL using a long press.")
