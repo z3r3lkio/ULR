@@ -34,6 +34,8 @@ targets:
         buildPhase: resources
       - path: ULRSafariExtension/content.js
         buildPhase: resources
+      - path: ULRSafariExtension/resolver.js
+        buildPhase: resources
       - path: ULRSafariExtension/popup.html
         buildPhase: resources
       - path: ULRSafariExtension/popup.js
